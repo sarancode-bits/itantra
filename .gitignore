@@ -18,3 +18,4 @@ local.properties
 app/src/main/assets/models/
 app/libs/*.aar
 *.tar.bz2
+.kotlin/
