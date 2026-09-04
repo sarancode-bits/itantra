@@ -52,6 +52,10 @@ android {
             excludes += "/META-INF/{AL2.0,LGPL2.1}"
         }
     }
+
+    androidResources {
+        noCompress += listOf("onnx", "txt")
+    }
 }
 
 kotlin {
@@ -92,8 +96,8 @@ dependencies {
     // Nearby Connections
     implementation(libs.play.services.nearby)
 
-    // Vosk STT Engine
-    implementation(libs.vosk.android)
+    // Sherpa-ONNX Engine
+    implementation(files("libs/sherpa-onnx-1.13.6.aar"))
 
     // Tooling & Testing
     debugImplementation(libs.androidx.compose.ui.tooling)

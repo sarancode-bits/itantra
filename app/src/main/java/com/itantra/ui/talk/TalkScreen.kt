@@ -91,6 +91,7 @@ fun TalkScreen(
     val rmsLevel by viewModel.rmsLevel.collectAsState()
     val speakingState by viewModel.speakingState.collectAsState()
     val peerBatteryPct by viewModel.peerBatteryPct.collectAsState()
+    val isMockMode by viewModel.isMockMode.collectAsState()
 
     val listState = rememberLazyListState()
 
@@ -117,6 +118,24 @@ fun TalkScreen(
                     onNavigateToHome()
                 }
             )
+
+            // Mock Mode Banner
+            if (isMockMode) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(AlertRed)
+                        .padding(vertical = 4.dp, horizontal = 16.dp),
+                    contentAlignment = Alignment.Center
+                ) {
+                    Text(
+                        text = "⚠️ MOCK MODE ACTIVE: Speech AI Models Missing",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = Color.White,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
 
             // TTS Speaking Indicator Strip
             if (speakingState is SpeakingState.Speaking) {

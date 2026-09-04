@@ -37,6 +37,9 @@ class TalkViewModel @Inject constructor(
     val peerBatteryPct: StateFlow<Int?> = repository.peerBatteryPct
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
+    val isMockMode: StateFlow<Boolean> = repository.sttEngine.isMockMode
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), false)
+
     fun startRecording() {
         repository.sttEngine.startListening()
     }

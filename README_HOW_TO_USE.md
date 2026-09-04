@@ -1,20 +1,45 @@
-# How to use these files
+# How to Use iTantra (Detailed User Guide)
 
-This set of files is a prompt-engineering roadmap for building **iTantra** with a coding assistant, phase by phase — the same pattern used for your other multi-phase project roadmaps.
+Welcome to iTantra! This document is a comprehensive guide to understanding and operating the offline emergency walkie-talkie app.
 
-## Files
-- `00_MASTER.md` — the constitution. Product spec, tech stack, architecture, file structure, wire protocol, design system, and the rules every phase must obey. Keep this attached/pinned in every phase conversation (or commit it into the repo as `ARCHITECTURE.md` and just reference it).
-- `PHASE_0_SETUP.md` through `PHASE_7_POLISH_DEMO.md` — one prompt per phase, run in order.
+## 1. First Launch & Setup
+When you first open iTantra, you will be greeted by the custom `iT` application icon. 
 
-## Workflow
-1. Start a fresh conversation with your coding agent (Claude Code, Android Studio's Gemini, Cursor, etc.).
-2. Paste `00_MASTER.md` first, then the current phase file, e.g. `PHASE_0_SETUP.md`.
-3. Let it implement the phase. Check off that phase's **Acceptance Criteria** yourself against the actual running app (mock flavor at minimum; prod flavor with two devices where noted) before moving on.
-4. Commit that phase's work as its own commit/PR, per the master doc's rule 7.
-5. Start the next phase in a new conversation (or continue the same one) with `00_MASTER.md` + the next `PHASE_N_*.md` file — the agent doesn't need the full history replayed, the master doc plus the existing codebase is enough context.
+### Automatic Permissions
+Unlike traditional apps where you must dig through Settings, iTantra automatically detects your Android version and requests exactly what it needs via native system popups.
+- **Microphone**: Essential for recording your voice for the STT engine.
+- **Nearby Devices (Bluetooth/Wi-Fi)**: Essential for the Google Nearby Connections API to locate other phones without internet.
+- **Location**: Required strictly by the Android OS for Wi-Fi Direct scanning.
+- **Notifications**: Keeps the peer-to-peer radio connection alive even when your phone screen is locked.
 
-## Why this order
-Setup → static UI → real connectivity → real speech → real messaging → the SOS safety feature → reliability hardening → polish. Connectivity and speech are built and proven independently (Phases 2 and 3) before being wired together (Phase 4), so if something breaks you know immediately which layer to blame. SOS is deliberately its own phase (5) after basic messaging works, since it's the highest-stakes feature and shouldn't be rushed alongside general chat plumbing. Reliability (6) and polish (7) come last because they're cross-cutting — they only make sense once there's a real app underneath them to harden and polish.
+## 2. Peer-to-Peer Networking
+iTantra uses a `P2P_CLUSTER` network topology. This means it creates a localized mesh network between devices.
 
-## Quick reference: what "mock mode" means throughout
-Every phase from 0 onward keeps a fully working `mock` build flavor that never touches real radios, real speech models, or the internet. It's not a debug toggle bolted on at the end — it's a parallel Hilt binding set from Phase 0, so at every single point in this roadmap you have a demoable app, even with no second phone in the room and no connectivity.
+### To Connect Two Devices:
+1. Ensure both devices have **Bluetooth** and **Wi-Fi** turned ON. (You do NOT need to be connected to a Wi-Fi router; the hardware radios just need to be enabled).
+2. On the first phone, tap **Host**. It will begin broadcasting a secure, invisible signal.
+3. On the second phone, tap **Scan**. It will listen for the Host's signal.
+4. Once they shake hands, you will automatically be dropped into the **Talk** screen.
+
+## 3. The Offline AI Engine (STT & TTS)
+iTantra is massive (~333MB) because it bundles real AI models inside the app itself, guaranteeing it works in total dead zones.
+
+### The "Lazy Load" Mechanics (And the 1-Second Freeze)
+The models (OpenAI's Whisper for Speech-to-Text, and Piper VITS for Text-to-Speech) are about 165MB. When you open the app, they sit quietly in your phone's storage. 
+- **The First Use:** The very first time you tap the Microphone button, the app will freeze for about 1 to 2 seconds. 
+- **Why?** This is an intentional engineering mechanism called "Lazy Initialization". We move the 165MB AI models into RAM safely on the main thread. If we did this in the background, a native bug in the AI engine (ONNX Runtime) would corrupt Android's user interface and crash the app.
+- After this initial 1-second freeze, the models are securely in memory, and all subsequent voice translations will happen instantly!
+
+### Bilingual Support
+The TTS engine automatically detects the language of incoming messages. If a peer sends a message in Devanagari script, the app dynamically switches from the English voice (`amy`) to the Hindi voice (`priyamvada`) to read it out loud.
+
+## 4. Emergency SOS
+The SOS feature is designed for absolute emergencies.
+1. Tap the **SOS** button in the header or bottom bar.
+2. Tap **Confirm** (or long-press the SOS button).
+3. A critical payload is blasted across the mesh network to all connected peers.
+4. It commands their phones to override silent switches, flash their camera strobes, vibrate violently, and play a max-volume siren (`STREAM_ALARM`).
+5. Tap **Stop Siren** to cease the alert.
+
+---
+*For development information and build instructions, see the main [README.md](./README.md).*

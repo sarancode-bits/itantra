@@ -14,6 +14,8 @@ import javax.inject.Singleton
 class MockSpeechToText @Inject constructor() : SpeechToText {
     private val scope = CoroutineScope(Dispatchers.Default)
 
+    override val isMockMode: StateFlow<Boolean> = MutableStateFlow(true)
+
     private val _state = MutableStateFlow<SttState>(SttState.Idle)
     override val state: StateFlow<SttState> = _state.asStateFlow()
 
@@ -57,6 +59,8 @@ class MockSpeechToText @Inject constructor() : SpeechToText {
 @Singleton
 class MockTextToSpeech @Inject constructor() : TextToSpeechEngine {
     private val scope = CoroutineScope(Dispatchers.Default)
+
+    override val isMockMode: StateFlow<Boolean> = MutableStateFlow(true)
 
     private val _speakingState = MutableStateFlow<SpeakingState>(SpeakingState.Idle)
     override val speakingState: StateFlow<SpeakingState> = _speakingState.asStateFlow()

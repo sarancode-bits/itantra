@@ -1,7 +1,7 @@
 package com.itantra.di
 
-import com.itantra.core.speech.AndroidSttEngine
-import com.itantra.core.speech.AndroidTtsEngine
+import com.itantra.core.speech.SherpaSttEngine
+import com.itantra.core.speech.SherpaTtsEngine
 import com.itantra.core.speech.SpeechToText
 import com.itantra.core.speech.TextToSpeechEngine
 import dagger.Binds
@@ -16,9 +16,9 @@ abstract class SpeechModule {
 
     @Binds
     @Singleton
-    abstract fun bindSpeechToText(impl: AndroidSttEngine): SpeechToText
+    abstract fun bindSpeechToText(impl: SherpaSttEngine): SpeechToText
 
     @Binds
     @Singleton
-    abstract fun bindTextToSpeech(impl: AndroidTtsEngine): TextToSpeechEngine
+    abstract fun bindTextToSpeech(impl: SherpaTtsEngine): TextToSpeechEngine
 }

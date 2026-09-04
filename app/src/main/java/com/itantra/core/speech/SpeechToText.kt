@@ -12,6 +12,7 @@ sealed class SttState {
 }
 
 interface SpeechToText {
+    val isMockMode: StateFlow<Boolean>
     val state: StateFlow<SttState>
     val rmsLevel: StateFlow<Float>
     fun startListening()
@@ -25,6 +26,7 @@ sealed class SpeakingState {
 }
 
 interface TextToSpeechEngine {
+    val isMockMode: StateFlow<Boolean>
     val speakingState: StateFlow<SpeakingState>
     fun speak(text: String)
     fun stop()
