@@ -31,6 +31,7 @@
     <!-- Foreground service permissions for background connectivity & alerts -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE_CONNECTED_DEVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_MICROPHONE" />
 
     <!-- Hardware vibration for loud SOS emergency alert -->
     <uses-permission android:name="android.permission.VIBRATE" />
@@ -69,6 +70,15 @@
             android:name=".service.ItantraForegroundService"
             android:exported="false"
             android:foregroundServiceType="connectedDevice" />
+
+        <!-- AI Engine Service in isolated process -->
+        <!-- Runs STT/TTS in a separate memory space so ONNX native crashes
+             cannot take down the main app (UI, messaging, SOS). -->
+        <service
+            android:name=".service.AiEngineService"
+            android:exported="false"
+            android:process=":ai_engine"
+            android:foregroundServiceType="microphone" />
 
     </application>
 

@@ -15,6 +15,7 @@ class MockSpeechToText @Inject constructor() : SpeechToText {
     private val scope = CoroutineScope(Dispatchers.Default)
 
     override val isMockMode: StateFlow<Boolean> = MutableStateFlow(true)
+    override val isReady: StateFlow<Boolean> = MutableStateFlow(true)
 
     private val _state = MutableStateFlow<SttState>(SttState.Idle)
     override val state: StateFlow<SttState> = _state.asStateFlow()
@@ -30,6 +31,8 @@ class MockSpeechToText @Inject constructor() : SpeechToText {
         "All clear at checkpoint bravo"
     )
     private var phraseIndex = 0
+
+    override suspend fun initialize() { /* Mock: nothing to load */ }
 
     override fun startListening() {
         _state.value = SttState.Listening
@@ -61,9 +64,12 @@ class MockTextToSpeech @Inject constructor() : TextToSpeechEngine {
     private val scope = CoroutineScope(Dispatchers.Default)
 
     override val isMockMode: StateFlow<Boolean> = MutableStateFlow(true)
+    override val isReady: StateFlow<Boolean> = MutableStateFlow(true)
 
     private val _speakingState = MutableStateFlow<SpeakingState>(SpeakingState.Idle)
     override val speakingState: StateFlow<SpeakingState> = _speakingState.asStateFlow()
+
+    override suspend fun initialize() { /* Mock: nothing to load */ }
 
     override fun speak(text: String) {
         _speakingState.value = SpeakingState.Speaking(text)
@@ -77,3 +83,4 @@ class MockTextToSpeech @Inject constructor() : TextToSpeechEngine {
         _speakingState.value = SpeakingState.Idle
     }
 }
+

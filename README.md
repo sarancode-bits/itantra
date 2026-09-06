@@ -29,8 +29,8 @@ It is completely self-contained. The ~165MB APK includes powerful AI models for 
 | **UI** | Jetpack Compose | Features a custom `iT` application icon, Dark theme, and Safety Orange accents |
 | **Architecture** | MVVM + Unidirectional State | `StateFlow` and `SharedFlow` reactive architecture |
 | **P2P Transport** | Nearby Connections API | Strategy `P2P_CLUSTER` over local Wi-Fi & Bluetooth |
-| **Speech-to-Text** | Sherpa ONNX (Whisper) | **Crucial Fix:** Configured with `numThreads = 1` and lazily loaded on the main thread to completely prevent the ONNX Runtime `pthread_mutex` corruption bug that crashes Android's HWUI rendering engine. |
-| **Text-to-Speech** | Sherpa ONNX (Piper VITS) | Bundles `en_US-amy` and `hi_IN-priyamvada` models for bilingual offline text-to-speech. Loads lazily on first audio receipt. |
+| **Speech-to-Text** | Sherpa ONNX (Whisper) | STT models are now loaded explicitly during a static Splash Screen, and run in a fully isolated `:ai_engine` background process via AIDL to guarantee UI thread stability and prevent native crashes from taking down the app. |
+| **Text-to-Speech** | Sherpa ONNX (Piper VITS) | Bundles `en_US-amy` and `hi_IN-priyamvada` models for bilingual offline text-to-speech. Also runs in the isolated `:ai_engine` process. |
 | **Persistence** | Room Database | Local message transcript and peer history persistence |
 
 ---
@@ -87,9 +87,10 @@ Upon launching iTantra on your phone, you will see the new `iT` app icon. The ap
 - On Phone B, tap **Scan**.
 - They will automatically connect and drop you into the Talk screen.
 
-### 2. The "Lazy Load" AI Models
-- The AI models (Whisper and Piper) are huge (~165MB) and are bundled inside the APK.
-- **IMPORTANT UX NOTE:** The very first time you tap the STT Mic button, the app will freeze for 1-2 seconds. This is intentional. It is safely moving the AI models from storage into RAM on the main thread. After this initial load, all subsequent voice messages are lightning fast!
+### 2. Startup & AI Model Loading
+- The embedded AI models (Whisper and Piper) are quite large (~165MB) and are bundled inside the APK.
+- **IMPORTANT UX NOTE:** On app launch, you will see a static **Splash Screen** with a progress bar. This safely loads the AI models into memory while the UI is dormant, avoiding C++ threading conflicts.
+- Once loaded, the models run in a completely isolated background process (`:ai_engine`). This means even if the AI engine crashes, the main walkie-talkie UI and SOS features remain perfectly alive!
 
 ### 3. Push-to-Talk (PTT) Messaging
 - **Press and Hold** the large circular Mic button. Speak your message.

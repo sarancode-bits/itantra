@@ -13,8 +13,16 @@ sealed class SttState {
 
 interface SpeechToText {
     val isMockMode: StateFlow<Boolean>
+    val isReady: StateFlow<Boolean>
     val state: StateFlow<SttState>
     val rmsLevel: StateFlow<Float>
+
+    /**
+     * Explicitly initialize the underlying AI model.
+     * MUST be called from the main thread while HWUI is not animating
+     * to avoid native pthread_mutex corruption (SIGABRT).
+     */
+    suspend fun initialize()
     fun startListening()
     fun stopListening()
 }
@@ -27,7 +35,15 @@ sealed class SpeakingState {
 
 interface TextToSpeechEngine {
     val isMockMode: StateFlow<Boolean>
+    val isReady: StateFlow<Boolean>
     val speakingState: StateFlow<SpeakingState>
+
+    /**
+     * Explicitly initialize the underlying AI model.
+     * MUST be called from the main thread while HWUI is not animating
+     * to avoid native pthread_mutex corruption (SIGABRT).
+     */
+    suspend fun initialize()
     fun speak(text: String)
     fun stop()
 }

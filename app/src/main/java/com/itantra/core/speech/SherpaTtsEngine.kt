@@ -35,23 +35,31 @@ class SherpaTtsEngine @Inject constructor(
     private val _isMockMode = MutableStateFlow(false)
     override val isMockMode: StateFlow<Boolean> = _isMockMode.asStateFlow()
 
+    private val _isReady = MutableStateFlow(false)
+    override val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
+
     private var enTts: OfflineTts? = null
     private var hiTts: OfflineTts? = null
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var playJob: Job? = null
     private var audioTrack: AudioTrack? = null
     private var mockStateJob: Job? = null
-    private var initialized = false
 
     /**
-     * Lazily initialize Sherpa TTS models on first use.
+     * Explicitly initialize Sherpa TTS models.
+     * This MUST be called from the main thread while HWUI is not animating
+     * (e.g. during a static splash screen) to avoid the native
+     * pthread_mutex corruption that causes SIGABRT.
+     *
      * Loading ONNX native libraries from a background thread concurrently
      * with HWUI causes pthread_mutex corruption (SIGABRT).
      */
-    private fun ensureInitialized() {
-        if (!initialized) {
-            initialized = true
+    override suspend fun initialize() {
+        if (_isReady.value) return
+        // Run on Main to avoid HWUI thread pool conflict
+        withContext(Dispatchers.Main) {
             initSherpaTts()
+            _isReady.value = true
         }
     }
 
@@ -130,7 +138,11 @@ class SherpaTtsEngine @Inject constructor(
     }
 
     override fun speak(text: String) {
-        ensureInitialized()
+        // Guard: if not initialized, skip (should never happen after splash)
+        if (!_isReady.value) {
+            Log.w(TAG, "speak() called before initialize(). Ignoring.")
+            return
+        }
 
         if (_isMockMode.value) {
             mockStateJob?.cancel()
@@ -222,3 +234,4 @@ class SherpaTtsEngine @Inject constructor(
         _speakingState.value = SpeakingState.Idle
     }
 }
+

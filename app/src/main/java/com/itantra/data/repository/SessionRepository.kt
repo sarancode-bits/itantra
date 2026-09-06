@@ -1,5 +1,6 @@
 package com.itantra.data.repository
 
+import android.util.Log
 import com.itantra.core.alert.SosAlertPlayer
 import com.itantra.core.protocol.ItantraMessage
 import com.itantra.core.speech.SpeechToText
@@ -45,6 +46,10 @@ class SessionRepository @Inject constructor(
     private val messageDao: MessageDao,
     private val peerDao: PeerDao
 ) {
+    companion object {
+        private const val TAG = "SessionRepository"
+    }
+
     private val scope = CoroutineScope(Dispatchers.IO)
 
     val connectionState: StateFlow<ConnectionState> = transport.connectionState
@@ -126,6 +131,17 @@ class SessionRepository @Inject constructor(
         }
     }
 
+    /**
+     * Initialize STT and TTS engines. Must be called from the main thread
+     * while HWUI is not animating (e.g. during a static splash screen).
+     * This avoids the SIGABRT crash caused by ONNX thread pool creation
+     * conflicting with Android's hardware UI renderer.
+     */
+    suspend fun initializeEngines() {
+        sttEngine.initialize()
+        ttsEngine.initialize()
+    }
+
     private suspend fun handleIncomingPayload(bytes: ByteArray) {
         val message = ItantraMessage.decodeFromByteArray(bytes) ?: return
         when (message) {
@@ -140,7 +156,11 @@ class SessionRepository @Inject constructor(
                 )
                 messageDao.insertMessage(entity)
                 // Speak out loud automatically (walkie-talkie mode)
-                ttsEngine.speak(message.text)
+                if (ttsEngine.isReady.value) {
+                    ttsEngine.speak(message.text)
+                } else {
+                    Log.w(TAG, "TTS not ready, skipping speak for incoming voice.")
+                }
                 // Send Ack back
                 val ack = ItantraMessage.Ack(forId = message.id)
                 transport.send(ack.encodeToByteArray())
@@ -185,7 +205,11 @@ class SessionRepository @Inject constructor(
             messageDao.updateDeliveryStatus(msgId, newStatus.name)
 
             // Speak locally for feedback
-            ttsEngine.speak(text)
+            if (ttsEngine.isReady.value) {
+                ttsEngine.speak(text)
+            } else {
+                Log.w(TAG, "TTS not ready, skipping local speak feedback.")
+            }
         }
     }
 

@@ -1,7 +1,7 @@
 package com.itantra.di
 
-import com.itantra.core.speech.SherpaSttEngine
-import com.itantra.core.speech.SherpaTtsEngine
+import com.itantra.core.speech.RemoteSpeechToText
+import com.itantra.core.speech.RemoteTextToSpeech
 import com.itantra.core.speech.SpeechToText
 import com.itantra.core.speech.TextToSpeechEngine
 import dagger.Binds
@@ -16,9 +16,10 @@ abstract class SpeechModule {
 
     @Binds
     @Singleton
-    abstract fun bindSpeechToText(impl: SherpaSttEngine): SpeechToText
+    abstract fun bindSpeechToText(impl: RemoteSpeechToText): SpeechToText
 
     @Binds
     @Singleton
-    abstract fun bindTextToSpeech(impl: SherpaTtsEngine): TextToSpeechEngine
+    abstract fun bindTextToSpeech(impl: RemoteTextToSpeech): TextToSpeechEngine
 }
+

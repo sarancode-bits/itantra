@@ -43,6 +43,9 @@ class SherpaSttEngine @Inject constructor(
     private val _isMockMode = MutableStateFlow(false)
     override val isMockMode: StateFlow<Boolean> = _isMockMode.asStateFlow()
 
+    private val _isReady = MutableStateFlow(false)
+    override val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
+
     private var recognizer: OfflineRecognizer? = null
 
     private var audioRecord: AudioRecord? = null
@@ -55,18 +58,24 @@ class SherpaSttEngine @Inject constructor(
 
     private var mockStateJob: Job? = null
     private var mockRmsJob: Job? = null
-    private var initialized = false
 
     /**
-     * Lazily initialize the Sherpa recognizer on first use.
+     * Explicitly initialize the Sherpa recognizer.
+     * This MUST be called from the main thread while HWUI is not animating
+     * (e.g. during a static splash screen) to avoid the native
+     * pthread_mutex corruption that causes SIGABRT.
+     *
      * Loading ONNX native libraries from a background thread concurrently
      * with HWUI causes pthread_mutex corruption (SIGABRT).
-     * Lazy init avoids this by loading safely on the main thread when needed.
+     * This method should be called exactly once, on the main thread,
+     * before any call to startListening().
      */
-    private fun ensureInitialized() {
-        if (!initialized) {
-            initialized = true
+    override suspend fun initialize() {
+        if (_isReady.value) return
+        // Run on Main to avoid HWUI thread pool conflict
+        withContext(Dispatchers.Main) {
             initSherpaRecognizer()
+            _isReady.value = true
         }
     }
 
@@ -113,7 +122,12 @@ class SherpaSttEngine @Inject constructor(
 
     @SuppressLint("MissingPermission")
     override fun startListening() {
-        ensureInitialized()
+        // Guard: if not initialized, skip (should never happen after splash)
+        if (!_isReady.value) {
+            Log.w(TAG, "startListening() called before initialize(). Ignoring.")
+            _state.value = SttState.Error("Speech engine not ready. Please wait.")
+            return
+        }
 
         if (_isMockMode.value) {
             mockStateJob?.cancel()
@@ -237,3 +251,4 @@ class SherpaSttEngine @Inject constructor(
         }
     }
 }
+

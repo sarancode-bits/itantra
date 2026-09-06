@@ -22,6 +22,7 @@ import com.itantra.ui.settings.SettingsScreen
 import com.itantra.ui.settings.SettingsViewModel
 import com.itantra.ui.sos.SosActiveScreen
 import com.itantra.ui.sos.SosConfirmScreen
+import com.itantra.ui.splash.SplashScreen
 import com.itantra.ui.talk.TalkScreen
 import com.itantra.ui.talk.TalkViewModel
 import com.itantra.ui.theme.DarkBackground
@@ -64,7 +65,18 @@ fun ItantraAppNavigation(sessionRepository: SessionRepository) {
         }
     }
 
-    NavHost(navController = navController, startDestination = "home") {
+    NavHost(navController = navController, startDestination = "splash") {
+        composable("splash") {
+            SplashScreen(
+                sessionRepository = sessionRepository,
+                onModelsReady = {
+                    navController.navigate("home") {
+                        popUpTo("splash") { inclusive = true }
+                    }
+                }
+            )
+        }
+
         composable("home") {
             val viewModel: HomeViewModel = hiltViewModel()
             HomeScreen(
