@@ -3,6 +3,7 @@ package com.itantra.data.repository
 import android.util.Log
 import com.itantra.core.alert.SosAlertPlayer
 import com.itantra.core.protocol.ItantraMessage
+import com.itantra.core.speech.SpeakingState
 import com.itantra.core.speech.SpeechToText
 import com.itantra.core.speech.SttState
 import com.itantra.core.speech.TextToSpeechEngine
@@ -43,6 +44,7 @@ class SessionRepository @Inject constructor(
     val sttEngine: SpeechToText,
     val ttsEngine: TextToSpeechEngine,
     val sosAlertPlayer: SosAlertPlayer,
+    val latencyTracker: com.itantra.core.speech.LatencyTracker,
     private val messageDao: MessageDao,
     private val peerDao: PeerDao
 ) {
@@ -96,6 +98,7 @@ class SessionRepository @Inject constructor(
                 sttEngine.state.collect { state ->
                     if (state is SttState.Result) {
                         try {
+                            latencyTracker.recordSttCompleted()
                             sendVoiceMessage(state.text)
                         } catch (e: Exception) {
                             e.printStackTrace()
@@ -104,6 +107,15 @@ class SessionRepository @Inject constructor(
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+            }
+        }
+
+        // Listen to TTS state for latency metrics
+        scope.launch {
+            ttsEngine.speakingState.collect { state ->
+                if (state is SpeakingState.Idle) {
+                    latencyTracker.recordTtsCompleted()
+                }
             }
         }
 
@@ -142,6 +154,11 @@ class SessionRepository @Inject constructor(
         ttsEngine.initialize()
     }
 
+    fun setLanguage(language: com.itantra.core.speech.SupportedLanguage) {
+        sttEngine.setLanguage(language)
+        ttsEngine.setLanguage(language)
+    }
+
     private suspend fun handleIncomingPayload(bytes: ByteArray) {
         val message = ItantraMessage.decodeFromByteArray(bytes) ?: return
         when (message) {
@@ -154,6 +171,7 @@ class SessionRepository @Inject constructor(
                     deliveryStatus = DeliveryStatus.Delivered.name,
                     isOwn = false
                 )
+                latencyTracker.recordPayloadReceived(message.id)
                 messageDao.insertMessage(entity)
                 // Speak out loud automatically (walkie-talkie mode)
                 if (ttsEngine.isReady.value) {
@@ -200,6 +218,7 @@ class SessionRepository @Inject constructor(
                 text = text,
                 timestampMs = entity.timestampMs
             )
+            latencyTracker.recordTransmitSent(msgId)
             val success = transport.send(payloadMsg.encodeToByteArray())
             val newStatus = if (success) DeliveryStatus.Sent else DeliveryStatus.Failed
             messageDao.updateDeliveryStatus(msgId, newStatus.name)

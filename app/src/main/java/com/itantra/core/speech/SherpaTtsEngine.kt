@@ -25,8 +25,6 @@ class SherpaTtsEngine @Inject constructor(
 
     companion object {
         private const val TAG = "SherpaTtsEngine"
-        private const val EN_MODEL_DIR = "models/tts/en"
-        private const val HI_MODEL_DIR = "models/tts/hi"
     }
 
     private val _speakingState = MutableStateFlow<SpeakingState>(SpeakingState.Idle)
@@ -38,8 +36,8 @@ class SherpaTtsEngine @Inject constructor(
     private val _isReady = MutableStateFlow(false)
     override val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
 
-    private var enTts: OfflineTts? = null
-    private var hiTts: OfflineTts? = null
+    private val ttsModels = mutableMapOf<SupportedLanguage, OfflineTts?>()
+    private var currentLanguage = SupportedLanguage.ENGLISH
     private val scope = CoroutineScope(Dispatchers.IO + SupervisorJob())
     private var playJob: Job? = null
     private var audioTrack: AudioTrack? = null
@@ -64,18 +62,18 @@ class SherpaTtsEngine @Inject constructor(
     }
 
     private fun initSherpaTts() {
-        enTts = tryLoadVitsModel(
-            modelDir = EN_MODEL_DIR,
-            modelFile = "en_US-amy-low.onnx",
-            label = "English"
-        )
-        hiTts = tryLoadVitsModel(
-            modelDir = HI_MODEL_DIR,
-            modelFile = "hi_IN-priyamvada-medium.onnx",
-            label = "Hindi"
-        )
+        var anyLoaded = false
+        for (lang in SupportedLanguage.entries) {
+            val tts = tryLoadVitsModel(
+                modelDir = lang.ttsModelDir,
+                modelFile = lang.ttsModelFile,
+                label = lang.displayName
+            )
+            ttsModels[lang] = tts
+            if (tts != null) anyLoaded = true
+        }
 
-        if (enTts == null && hiTts == null) {
+        if (!anyLoaded) {
             Log.w(TAG, "No TTS models loaded, falling back to mock mode.")
             _isMockMode.value = true
         }
@@ -128,13 +126,12 @@ class SherpaTtsEngine @Inject constructor(
         }
     }
 
-    /**
-     * Selects the appropriate TTS engine based on a simple heuristic:
-     * if the text contains Devanagari characters, use Hindi; otherwise English.
-     */
-    private fun selectTtsForText(text: String): OfflineTts? {
-        val hasDevanagari = text.any { it.code in 0x0900..0x097F }
-        return if (hasDevanagari && hiTts != null) hiTts else enTts ?: hiTts
+    override fun setLanguage(language: SupportedLanguage) {
+        currentLanguage = language
+    }
+
+    private fun selectTtsForLanguage(): OfflineTts? {
+        return ttsModels[currentLanguage] ?: ttsModels[SupportedLanguage.ENGLISH] ?: ttsModels.values.firstOrNull { it != null }
     }
 
     override fun speak(text: String) {
@@ -157,7 +154,7 @@ class SherpaTtsEngine @Inject constructor(
         playJob = scope.launch {
             _speakingState.value = SpeakingState.Speaking(text)
             try {
-                val tts = selectTtsForText(text)
+                val tts = selectTtsForLanguage()
                 if (tts == null) {
                     _speakingState.value = SpeakingState.Error("No TTS model available for this text.")
                     return@launch

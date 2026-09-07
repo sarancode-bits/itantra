@@ -90,8 +90,11 @@ fun TalkScreen(
     val sttState by viewModel.sttState.collectAsState()
     val rmsLevel by viewModel.rmsLevel.collectAsState()
     val speakingState by viewModel.speakingState.collectAsState()
-    val peerBatteryPct by viewModel.peerBatteryPct.collectAsState()
     val isMockMode by viewModel.isMockMode.collectAsState()
+    val latencyMetrics by viewModel.latencyMetrics.collectAsState()
+    val isMetricsOverlayEnabled by viewModel.isMetricsOverlayEnabled.collectAsState()
+    val isHandsFreeMode by viewModel.isHandsFreeMode.collectAsState()
+    val peerBatteryPct by viewModel.peerBatteryPct.collectAsState()
 
     val listState = rememberLazyListState()
 
@@ -155,6 +158,30 @@ fun TalkScreen(
                 }
             }
 
+            // Debug Metrics Overlay
+            if (isMetricsOverlayEnabled && latencyMetrics != null) {
+                Box(
+                    modifier = Modifier
+                        .fillMaxWidth()
+                        .background(Color.Black.copy(alpha = 0.8f))
+                        .padding(8.dp)
+                ) {
+                    val m = latencyMetrics!!
+                    Column {
+                        Text("SIH EVALUATION METRICS", style = MaterialTheme.typography.labelSmall, color = ConnectedGreen, fontWeight = FontWeight.Bold)
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("STT Latency: ${m.sttLatencyMs}ms", color = TextPrimary, style = MaterialTheme.typography.bodySmall)
+                            Text("Audio Dur: ${m.audioDurationMs}ms", color = TextPrimary, style = MaterialTheme.typography.bodySmall)
+                            Text("RTF: ${String.format("%.2f", m.rtf)}", color = SafetyOrange, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
+                        }
+                        Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                            Text("Tx Latency: ${m.transmitLatencyMs}ms", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                            Text("TTS Gen: ${m.ttsGenerationMs}ms", color = TextSecondary, style = MaterialTheme.typography.bodySmall)
+                        }
+                    }
+                }
+            }
+
             // Transcript Scroll Area
             Box(
                 modifier = Modifier
@@ -186,8 +213,10 @@ fun TalkScreen(
             PushToTalkArea(
                 sttState = sttState,
                 rmsLevel = rmsLevel,
+                isHandsFreeMode = isHandsFreeMode,
                 onPressStart = { viewModel.startRecording() },
-                onPressEnd = { viewModel.stopRecording() }
+                onPressEnd = { viewModel.stopRecording() },
+                onToggleHandsFree = { viewModel.toggleHandsFreeMode() }
             )
         }
     }
@@ -382,8 +411,10 @@ fun TranscriptBubble(entry: TranscriptEntry, onRetry: () -> Unit) {
 fun PushToTalkArea(
     sttState: SttState,
     rmsLevel: Float,
+    isHandsFreeMode: Boolean,
     onPressStart: () -> Unit,
-    onPressEnd: () -> Unit
+    onPressEnd: () -> Unit,
+    onToggleHandsFree: () -> Unit
 ) {
     val isRecording = sttState is SttState.Listening
 
@@ -429,14 +460,16 @@ fun PushToTalkArea(
                     .scale(if (isRecording) pulseScale + (rmsLevel / 50f) else 1.0f)
                     .clip(CircleShape)
                     .background(if (isRecording) AlertRed else SafetyOrange)
-                    .pointerInput(Unit) {
-                        detectTapGestures(
-                            onPress = {
-                                onPressStart()
-                                tryAwaitRelease()
-                                onPressEnd()
-                            }
-                        )
+                    .pointerInput(isHandsFreeMode) {
+                        if (!isHandsFreeMode) {
+                            detectTapGestures(
+                                onPress = {
+                                    onPressStart()
+                                    tryAwaitRelease()
+                                    onPressEnd()
+                                }
+                            )
+                        }
                     },
                 contentAlignment = Alignment.Center
             ) {
@@ -445,6 +478,32 @@ fun PushToTalkArea(
                     contentDescription = "Hold to talk",
                     tint = TextPrimary,
                     modifier = Modifier.size(48.dp)
+                )
+            }
+            
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Hands-Free Toggle
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .padding(horizontal = 32.dp),
+                horizontalArrangement = Arrangement.Center,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Hands-Free (VAD)",
+                    style = MaterialTheme.typography.labelMedium,
+                    color = TextPrimary
+                )
+                Spacer(modifier = Modifier.width(8.dp))
+                androidx.compose.material3.Switch(
+                    checked = isHandsFreeMode,
+                    onCheckedChange = { onToggleHandsFree() },
+                    colors = androidx.compose.material3.SwitchDefaults.colors(
+                        checkedThumbColor = SafetyOrange,
+                        checkedTrackColor = SafetyOrange.copy(alpha = 0.5f)
+                    )
                 )
             }
         }

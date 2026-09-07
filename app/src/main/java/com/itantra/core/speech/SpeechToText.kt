@@ -24,7 +24,9 @@ interface SpeechToText {
      */
     suspend fun initialize()
     fun startListening()
+    fun startContinuousListening() {} // Default empty for mock backward compatibility
     fun stopListening()
+    fun setLanguage(language: SupportedLanguage) {}
 }
 
 sealed class SpeakingState {
@@ -46,4 +48,5 @@ interface TextToSpeechEngine {
     suspend fun initialize()
     fun speak(text: String)
     fun stop()
+    fun setLanguage(language: SupportedLanguage) {}
 }

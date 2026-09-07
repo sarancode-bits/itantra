@@ -40,6 +40,16 @@ interface IAiEngine {
     void stopListening();
 
     /**
+     * Start continuous recording with VAD.
+     */
+    void startContinuousListening();
+
+    /**
+     * Set the active language for STT and TTS models.
+     */
+    void setLanguage(String languageCode);
+
+    /**
      * Speak the given text aloud using TTS.
      */
     void speak(String text);

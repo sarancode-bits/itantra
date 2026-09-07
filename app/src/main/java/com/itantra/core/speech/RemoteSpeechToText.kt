@@ -159,4 +159,21 @@ class RemoteSpeechToText @Inject constructor(
             _state.value = SttState.Error("AI engine connection lost")
         }
     }
+
+    override fun startContinuousListening() {
+        try {
+            engine?.startContinuousListening()
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to call remote startContinuousListening", e)
+            _state.value = SttState.Error("AI engine connection lost")
+        }
+    }
+
+    override fun setLanguage(language: SupportedLanguage) {
+        try {
+            engine?.setLanguage(language.code)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to set language on remote engine", e)
+        }
+    }
 }

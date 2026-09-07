@@ -24,15 +24,25 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenuItem
+import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.ExposedDropdownMenuBox
+import androidx.compose.material3.ExposedDropdownMenuDefaults
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Surface
+import androidx.compose.material3.Switch
+import androidx.compose.material3.SwitchDefaults
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextField
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.text.font.FontWeight
@@ -48,6 +58,7 @@ import com.itantra.ui.theme.TextPrimary
 import com.itantra.ui.theme.TextSecondary
 import com.itantra.ui.theme.WarningYellow
 
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun SettingsScreen(
     viewModel: SettingsViewModel,
@@ -55,6 +66,9 @@ fun SettingsScreen(
     onNavigateToPermissions: () -> Unit
 ) {
     val radioStatus by viewModel.radioStatus.collectAsState()
+    val selectedLanguage by viewModel.selectedLanguage.collectAsState()
+    val isMetricsOverlayEnabled by viewModel.isMetricsOverlayEnabled.collectAsState()
+
 
     Surface(
         modifier = Modifier.fillMaxSize(),
@@ -111,6 +125,55 @@ fun SettingsScreen(
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextPrimary
                     )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Language Selection Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = androidx.compose.foundation.BorderStroke(1.dp, OutlineBorder)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "VOICE LANGUAGE",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = TextSecondary
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    var expanded by remember { mutableStateOf(false) }
+                    
+                    ExposedDropdownMenuBox(
+                        expanded = expanded,
+                        onExpandedChange = { expanded = it }
+                    ) {
+                        TextField(
+                            value = "${selectedLanguage.displayName} (${selectedLanguage.nativeName})",
+                            onValueChange = {},
+                            readOnly = true,
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expanded) },
+                            colors = ExposedDropdownMenuDefaults.textFieldColors(),
+                            modifier = Modifier.menuAnchor().fillMaxWidth()
+                        )
+                        
+                        ExposedDropdownMenu(
+                            expanded = expanded,
+                            onDismissRequest = { expanded = false }
+                        ) {
+                            com.itantra.core.speech.SupportedLanguage.entries.forEach { lang ->
+                                DropdownMenuItem(
+                                    text = { Text("${lang.displayName} (${lang.nativeName})") },
+                                    onClick = {
+                                        viewModel.setLanguage(lang)
+                                        expanded = false
+                                    }
+                                )
+                            }
+                        }
+                    }
                 }
             }
 
@@ -203,6 +266,44 @@ fun SettingsScreen(
                         text = "iTantra plays SOS alerts on STREAM_ALARM with maximum available volume and vibration. However, total silent Do Not Disturb modes or hardware mute switches on select OEM Android models may still mute alarm streams depending on user OS permission configuration.",
                         style = MaterialTheme.typography.bodyMedium,
                         color = TextSecondary
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
+
+            // Developer Metrics
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                colors = CardDefaults.cardColors(containerColor = SurfaceCard),
+                border = androidx.compose.foundation.BorderStroke(1.dp, OutlineBorder)
+            ) {
+                Row(
+                    modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column(modifier = Modifier.weight(1f)) {
+                        Text(
+                            text = "SIH Latency Overlay",
+                            style = MaterialTheme.typography.titleMedium,
+                            color = TextPrimary,
+                            fontWeight = FontWeight.Bold
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = "Show real-time STT latency and RTF metrics on the Talk screen.",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = TextSecondary
+                        )
+                    }
+                    Switch(
+                        checked = isMetricsOverlayEnabled,
+                        onCheckedChange = { viewModel.toggleMetricsOverlay(it) },
+                        colors = SwitchDefaults.colors(
+                            checkedThumbColor = SafetyOrange,
+                            checkedTrackColor = SafetyOrange.copy(alpha = 0.5f)
+                        )
                     )
                 }
             }

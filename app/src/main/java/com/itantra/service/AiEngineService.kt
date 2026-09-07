@@ -78,6 +78,18 @@ class AiEngineService : Service() {
             sttEngine?.stopListening()
         }
 
+        override fun startContinuousListening() {
+            sttEngine?.startContinuousListening()
+        }
+
+        override fun setLanguage(languageCode: String?) {
+            languageCode?.let { code ->
+                val lang = com.itantra.core.speech.SupportedLanguage.fromCode(code)
+                sttEngine?.setLanguage(lang)
+                ttsEngine?.setLanguage(lang)
+            }
+        }
+
         override fun speak(text: String?) {
             text?.let { ttsEngine?.speak(it) }
         }

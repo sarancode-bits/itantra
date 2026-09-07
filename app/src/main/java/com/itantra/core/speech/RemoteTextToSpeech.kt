@@ -157,4 +157,12 @@ class RemoteTextToSpeech @Inject constructor(
         }
         _speakingState.value = SpeakingState.Idle
     }
+
+    override fun setLanguage(language: SupportedLanguage) {
+        try {
+            engine?.setLanguage(language.code)
+        } catch (e: Exception) {
+            Log.e(TAG, "Failed to set language on remote engine", e)
+        }
+    }
 }

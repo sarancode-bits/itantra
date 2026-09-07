@@ -59,6 +59,12 @@ class SherpaSttEngine @Inject constructor(
     private var mockStateJob: Job? = null
     private var mockRmsJob: Job? = null
 
+    private var currentLanguage = SupportedLanguage.ENGLISH
+    private var isContinuousListening = false
+    private var silenceFrames = 0
+    private val SILENCE_THRESHOLD = 50 // roughly 5 seconds of silence if delayed at 100ms
+
+
     /**
      * Explicitly initialize the Sherpa recognizer.
      * This MUST be called from the main thread while HWUI is not animating
@@ -100,7 +106,7 @@ class SherpaSttEngine @Inject constructor(
                     whisper = OfflineWhisperModelConfig(
                         encoder = "$MODEL_DIR/tiny-encoder.int8.onnx",
                         decoder = "$MODEL_DIR/tiny-decoder.int8.onnx",
-                        language = "en",
+                        language = currentLanguage.sttLanguageCode,
                         task = "transcribe"
                     ),
                     tokens = "$MODEL_DIR/tiny-tokens.txt",
@@ -109,15 +115,33 @@ class SherpaSttEngine @Inject constructor(
                     provider = "cpu"
                 )
             )
+            val oldRec = recognizer
             recognizer = OfflineRecognizer(
                 assetManager = context.assets,
                 config = config
             )
-            Log.i(TAG, "Sherpa STT initialized successfully with Whisper Tiny INT8.")
+            oldRec?.release()
+            Log.i(TAG, "Sherpa STT initialized successfully with Whisper Tiny INT8 (lang: ${currentLanguage.sttLanguageCode}).")
         } catch (e: Exception) {
             Log.e(TAG, "Failed to init Sherpa STT, falling back to mock mode", e)
             _isMockMode.value = true
         }
+    }
+
+    override fun setLanguage(language: SupportedLanguage) {
+        if (currentLanguage == language) return
+        currentLanguage = language
+        if (_isReady.value) {
+            // Re-initialize with new language
+            scope.launch(Dispatchers.Main) {
+                initSherpaRecognizer()
+            }
+        }
+    }
+
+    override fun startContinuousListening() {
+        isContinuousListening = true
+        startListening()
     }
 
     @SuppressLint("MissingPermission")
@@ -183,7 +207,22 @@ class SherpaSttEngine @Inject constructor(
                             for (f in floats) audioSamples.add(f)
                         }
                         val rms = sqrt((sum / read).toDouble()).toFloat()
-                        _rmsLevel.value = (rms * 100f).coerceIn(0f, 10f)
+                        val scaledRms = (rms * 100f).coerceIn(0f, 10f)
+                        _rmsLevel.value = scaledRms
+                        
+                        // Simple VAD for continuous listening
+                        if (isContinuousListening) {
+                            if (scaledRms < 1.0f) {
+                                silenceFrames++
+                                if (silenceFrames > SILENCE_THRESHOLD) {
+                                    // Silence detected, trigger stop and process
+                                    silenceFrames = 0
+                                    scope.launch { stopListening() }
+                                }
+                            } else {
+                                silenceFrames = 0
+                            }
+                        }
                     }
                 }
             }
@@ -243,6 +282,12 @@ class SherpaSttEngine @Inject constructor(
                     _state.value = SttState.Result(text)
                 } else {
                     _state.value = SttState.Error("No speech detected. Please try again.")
+                }
+                
+                // If continuous listening, restart listening after processing
+                if (isContinuousListening) {
+                    delay(500)
+                    startListening()
                 }
             } catch (e: Exception) {
                 Log.e(TAG, "Decode error", e)

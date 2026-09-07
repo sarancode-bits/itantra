@@ -14,10 +14,12 @@ It is completely self-contained. The ~165MB APK includes powerful AI models for 
 
 ### Key Features
 1. **Automatic Permissions:** The app automatically requests all required permissions natively on launch.
-2. **On-device STT (Whisper):** Converts speech into light text packets using an embedded Whisper int8 ONNX model.
+2. **On-device STT (Whisper):** Converts speech into light text packets using an embedded Whisper int8 ONNX model. Supports multilingual transcription out-of-the-box.
 3. **P2P Transport:** Transmits serialized JSON payloads over Google Nearby Connections API (`P2P_CLUSTER`).
-4. **On-device TTS (Piper VITS):** Receiving device converts text into speech using English or Hindi AI models and plays it out loud automatically.
+4. **10-Language On-device TTS (Piper VITS):** Receiving device converts text into speech using Piper models and plays it out loud automatically. Fully supports English, Hindi, Gujarati, Marathi, Kannada, Malayalam, Tamil, Telugu, Odia, and Bengali.
 5. **SOS Emergency Siren:** Long-press SOS triggers a high-priority `STREAM_ALARM` siren, vibration waveform, and flashlight strobe across all paired endpoints.
+6. **Hands-Free (VAD) Mode:** An energy-based silence detection mode allows continuous, hands-free operation without needing to hold the PTT button.
+7. **SIH Latency Benchmarking:** A built-in developer overlay that measures real-time STT/network latency and calculates the Real Time Factor (RTF) of voice transcription, perfect for evaluation.
 
 ---
 
@@ -29,9 +31,9 @@ It is completely self-contained. The ~165MB APK includes powerful AI models for 
 | **UI** | Jetpack Compose | Features a custom `iT` application icon, Dark theme, and Safety Orange accents |
 | **Architecture** | MVVM + Unidirectional State | `StateFlow` and `SharedFlow` reactive architecture |
 | **P2P Transport** | Nearby Connections API | Strategy `P2P_CLUSTER` over local Wi-Fi & Bluetooth |
-| **Speech-to-Text** | Sherpa ONNX (Whisper) | STT models are now loaded explicitly during a static Splash Screen, and run in a fully isolated `:ai_engine` background process via AIDL to guarantee UI thread stability and prevent native crashes from taking down the app. |
-| **Text-to-Speech** | Sherpa ONNX (Piper VITS) | Bundles `en_US-amy` and `hi_IN-priyamvada` models for bilingual offline text-to-speech. Also runs in the isolated `:ai_engine` process. |
-| **Persistence** | Room Database | Local message transcript and peer history persistence |
+| **Speech-to-Text** | Sherpa ONNX (Whisper) | STT models are now loaded explicitly during a static Splash Screen, and run in a fully isolated `:ai_engine` background process via AIDL to guarantee UI thread stability. Includes energy-based VAD for continuous hands-free listening. |
+| **Text-to-Speech** | Sherpa ONNX (Piper VITS) | Dynamically loads TTS models based on the selected language setting. Supports 10 Indian regional languages for fully offline text-to-speech. Also runs in the isolated `:ai_engine` process. |
+| **Persistence** | Room Database | Local message transcript, latency metrics, and peer history persistence |
 
 ---
 
