@@ -171,7 +171,7 @@ fun HomeScreen(
             ) {
                 // HOST BUTTON
                 Button(
-                    onClick = { viewModel.startHosting() },
+                    onClick = { viewModel.toggleHosting() },
                     modifier = Modifier
                         .weight(1f)
                         .height(110.dp),
@@ -192,7 +192,7 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = if (connectionState is ConnectionState.Advertising) "HOSTING..." else "HOST",
+                            text = if (connectionState is ConnectionState.Advertising) "STOP" else "HOST",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )
@@ -206,7 +206,7 @@ fun HomeScreen(
 
                 // SCAN BUTTON
                 Button(
-                    onClick = { viewModel.startScanning() },
+                    onClick = { viewModel.toggleScanning() },
                     modifier = Modifier
                         .weight(1f)
                         .height(110.dp),
@@ -228,7 +228,7 @@ fun HomeScreen(
                         )
                         Spacer(modifier = Modifier.height(8.dp))
                         Text(
-                            text = if (connectionState is ConnectionState.Discovering) "SCANNING..." else "SCAN",
+                            text = if (connectionState is ConnectionState.Discovering) "STOP" else "SCAN",
                             style = MaterialTheme.typography.titleLarge,
                             fontWeight = FontWeight.Bold
                         )

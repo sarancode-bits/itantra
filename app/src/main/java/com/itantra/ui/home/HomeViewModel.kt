@@ -23,15 +23,25 @@ class HomeViewModel @Inject constructor(
     val discoveredPeers: StateFlow<List<PeerInfo>> = repository.discoveredPeers
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun startHosting(deviceName: String = "Emergency Node") {
+    fun toggleHosting(deviceName: String = "Emergency Node") {
         viewModelScope.launch {
-            repository.transport.startHosting(deviceName)
+            if (repository.transport.connectionState.value is ConnectionState.Advertising) {
+                repository.transport.stop()
+            } else {
+                repository.transport.stop()
+                repository.transport.startHosting(deviceName)
+            }
         }
     }
 
-    fun startScanning() {
+    fun toggleScanning() {
         viewModelScope.launch {
-            repository.transport.startScanning()
+            if (repository.transport.connectionState.value is ConnectionState.Discovering) {
+                repository.transport.stop()
+            } else {
+                repository.transport.stop()
+                repository.transport.startScanning()
+            }
         }
     }
 
