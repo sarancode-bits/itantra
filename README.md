@@ -4,101 +4,96 @@
 **Architecture:** MVVM + Clean Architecture + Hilt + Room + Jetpack Compose  
 **Primary Loop:** Off-grid voice speech-to-text transmission over local P2P radios with on-device text-to-speech audio playback.
 
----
-
-## Product Overview
-
-iTantra is a **fully offline**, phone-to-phone emergency walkie-talkie. Two nearby Android devices — without internet, SIM cards, or Wi-Fi routers — discover each other over Wi-Fi Direct and Bluetooth radios, pair, and exchange short transcribed voice messages. 
-
-It is completely self-contained. The ~165MB APK includes powerful AI models for **Speech-to-Text (STT)** and **Text-to-Speech (TTS)** built directly into the app, meaning it never needs an internet connection to process voice data.
-
-### Key Features
-1. **Automatic Permissions:** The app automatically requests all required permissions natively on launch.
-2. **On-device STT (Whisper):** Converts speech into light text packets using an embedded Whisper int8 ONNX model. Supports multilingual transcription out-of-the-box.
-3. **P2P Transport:** Transmits serialized JSON payloads over Google Nearby Connections API (`P2P_CLUSTER`).
-4. **10-Language On-device TTS (Piper VITS):** Receiving device converts text into speech using Piper models and plays it out loud automatically. Fully supports English, Hindi, Gujarati, Marathi, Kannada, Malayalam, Tamil, Telugu, Odia, and Bengali.
-5. **SOS Emergency Siren:** Long-press SOS triggers a high-priority `STREAM_ALARM` siren, vibration waveform, and flashlight strobe across all paired endpoints.
-6. **Hands-Free (VAD) Mode:** An energy-based silence detection mode allows continuous, hands-free operation without needing to hold the PTT button.
-7. **SIH Latency Benchmarking:** A built-in developer overlay that measures real-time STT/network latency and calculates the Real Time Factor (RTF) of voice transcription, perfect for evaluation.
+![iTantra Banner/Screenshot Placeholder](#) *(Add screenshot here)*
 
 ---
 
-## Tech Stack & Recent Engineering Fixes
+## 📖 Product Overview
+
+**iTantra** is a fully offline, phone-to-phone emergency walkie-talkie. Two nearby Android devices — without internet, SIM cards, or Wi-Fi routers — discover each other over Wi-Fi Direct and Bluetooth radios, pair, and exchange short transcribed voice messages. 
+
+It is completely self-contained. The APK includes powerful AI models for **Speech-to-Text (STT)** and **Text-to-Speech (TTS)** built directly into the app, meaning it never needs an internet connection to process voice data. By converting heavy PCM audio into tiny JSON text packets, iTantra guarantees communication over extremely low-bandwidth, congested, or unstable ad-hoc connections.
+
+### 🌟 Key Features
+1. **100% Offline AI Engines:** Uses OpenAI's Whisper (INT8) for transcription and Piper VITS for speech synthesis directly on-device.
+2. **10-Language Support:** Seamlessly supports English, Hindi, Gujarati, Marathi, Kannada, Malayalam, Tamil, Telugu, Odia, and Bengali.
+3. **P2P Transport:** Transmits JSON payloads over Google Nearby Connections API (`P2P_CLUSTER` topology) using Bluetooth and Wi-Fi Direct.
+4. **Hands-Free Walkie-Talkie (VAD):** An energy-based Voice Activity Detection (VAD) mode allows continuous, hands-free operation without holding the PTT button.
+5. **Tactical SOS Override:** A critical broadcast that forces connected phones to override silent switches, flash camera strobes, vibrate violently, and play a max-volume siren (`STREAM_ALARM`).
+6. **Isolated Process Architecture:** AI models run in an isolated `:ai_engine` process to prevent heavy native C++ computations from blocking the main UI or communication threads.
+7. **SIH Latency Benchmarking:** A built-in developer overlay measures real-time STT/network latency and calculates the Real-Time Factor (RTF).
+
+---
+
+## 🛠 Tech Stack
 
 | Layer | Technology Choice | Details & Optimizations |
 |---|---|---|
-| **Language** | Kotlin | Coroutines & Flow for asynchronous callback handling |
-| **UI** | Jetpack Compose | Features a custom `iT` application icon, Dark theme, and Safety Orange accents |
-| **Architecture** | MVVM + Unidirectional State | `StateFlow` and `SharedFlow` reactive architecture |
-| **P2P Transport** | Nearby Connections API | Strategy `P2P_CLUSTER` over local Wi-Fi & Bluetooth |
-| **Speech-to-Text** | Sherpa ONNX (Whisper) | STT models are now loaded explicitly during a static Splash Screen, and run in a fully isolated `:ai_engine` background process via AIDL to guarantee UI thread stability. Includes energy-based VAD for continuous hands-free listening. |
-| **Text-to-Speech** | Sherpa ONNX (Piper VITS) | Dynamically loads TTS models based on the selected language setting. Supports 10 Indian regional languages for fully offline text-to-speech. Also runs in the isolated `:ai_engine` process. |
-| **Persistence** | Room Database | Local message transcript, latency metrics, and peer history persistence |
+| **Language** | Kotlin | Coroutines & Flow for asynchronous callback handling. |
+| **UI** | Jetpack Compose | Features a custom `iT` application icon and a sleek White/Orange light theme. |
+| **Architecture** | MVVM + Clean Architecture | `StateFlow` and `SharedFlow` reactive unidirectional data flow. |
+| **P2P Transport** | Nearby Connections API | Utilizes `Strategy.P2P_CLUSTER` to automate mDNS/BLE discovery without cell towers. |
+| **Speech-to-Text** | Sherpa ONNX (Whisper) | STT models are loaded explicitly during a static Splash Screen, and run in a fully isolated `:ai_engine` background process via AIDL to guarantee UI thread stability. |
+| **Text-to-Speech** | Sherpa ONNX (Piper VITS) | Dynamically loads TTS models based on the selected language setting. Fully offline text-to-speech. |
+| **Persistence** | Room Database | Local message transcript, latency metrics, and peer history persistence. |
 
 ---
 
-## Build Flavors
+## ⚙️ How It Works: The AI Model Lifecycle
+
+iTantra bundles the AI models (~165MB) directly inside the APK, guaranteeing it works in total dead zones.
+
+1. **Cold Start (App Launched):** The models are read from storage and loaded into RAM during the initial static Splash Screen. This "Lazy Initialization" takes a couple of seconds and intentionally happens before the UI starts animating to prevent `pthread_mutex` corruption in the Android HWUI renderer.
+2. **Warm Start (App Backgrounded):** If you minimize the app, the models stay securely in RAM. Returning to the app is instant, and voice translation triggers with zero-latency.
+
+---
+
+## 🚀 How to Use iTantra (User Guide)
+
+### 1. First Launch & Setup
+iTantra automatically detects your Android version and requests exactly what it needs via native system popups on the very first launch:
+- **Microphone**: To record your voice for the STT engine.
+- **Nearby Devices (Bluetooth/Wi-Fi)**: For the Nearby Connections API to locate other phones without internet.
+- **Location**: Required strictly by the Android OS for Wi-Fi Direct scanning.
+- **Notifications**: Keeps the peer-to-peer radio connection alive even when your phone screen is locked.
+
+### 2. Connecting Peers (Off-Grid)
+1. Ensure both devices have **Bluetooth** and **Wi-Fi** turned ON. *(No router or internet needed!)*
+2. On the first phone, tap **Host**. It will begin broadcasting a secure, invisible signal.
+3. On the second phone, tap **Scan**. It will listen for the Host's signal.
+4. Once they shake hands, you will automatically enter the **Talk** screen.
+
+### 3. Messaging
+- **Push-to-Talk:** Press and Hold the large Mic button. Speak your message. Release the button to instantly transcribe and transmit it.
+- **Hands-Free Mode:** Toggle "Hands-Free (VAD)" on the Talk screen. Just speak naturally. The app detects pauses in your speech and automatically transmits complete sentences.
+- **Playback:** The receiving peer receives the text packet and reads it out loud automatically using their currently selected language TTS voice.
+
+### 4. Emergency SOS
+The SOS feature is designed for absolute emergencies.
+1. Tap the **SOS** button in the header or bottom bar.
+2. Tap **Confirm** (or long-press the SOS button).
+3. A critical payload is blasted across the mesh network.
+4. Connected phones will immediately trigger a high-priority alarm, vibration, and flashlight strobe.
+
+---
+
+## 💻 Developer Guide: Build Flavors & Deployment
 
 iTantra features two distinct build flavors configured via Gradle product flavors and Hilt DI modules:
 
 ### 1. `mock` (Default / Demo Loop)
 - **Command:** `./gradlew assembleMockDebug`
-- **Behavior:** Binds `MockTransport` and `MockSpeechToText`. Simulates peer discovery and canned speech responses. Ideal for emulators or single-device live demonstrations.
+- **Behavior:** Binds `MockTransport` and `MockSpeechToText`. Simulates peer discovery and canned speech responses. Ideal for emulators or single-device live demonstrations where hardware radios aren't available.
 
 ### 2. `prod` (Physical Device Deployment)
-- **Command:** `./gradlew assembleProdRelease`
-- **Behavior:** Binds `NearbyTransport` (Google Nearby Connections) and `SherpaSttEngine`. Connects two physical Android devices over real radios without internet and uses the real AI models.
+- **Command:** `./gradlew assembleProdDebug`
+- **Behavior:** Binds `NearbyTransport` and `SherpaSttEngine`. Connects two physical Android devices over real hardware radios and uses the real ONNX AI models.
 
----
-
-## How to Run on Mobile Device
-
-### Prerequisites
-- **Android Physical Device:** Android 8.0 (API 26) or higher, with Bluetooth and Wi-Fi enabled.
-- **USB Cable / Wireless Debugging:** To connect your phone to your computer.
-
-### Step-by-Step Installation
-
-#### 1. Enable Developer Options & USB Debugging on Mobile
+### Step-by-Step Installation on Mobile
 1. Go to **Settings > About Phone** and tap **Build Number** 7 times.
-2. Go to **Settings > System > Developer options**.
-3. Enable **USB debugging**.
-
-#### 2. Connect & Build
-1. Plug in your phone via USB and tap **Allow USB Debugging**.
-2. Run the following command to build and install the real P2P version:
+2. Go to **Settings > System > Developer options** and enable **USB debugging**.
+3. Plug in your phone via USB and tap **Allow USB Debugging**.
+4. Run the following command to build and install the real P2P version:
    ```bash
    ./gradlew installProdDebug
    ```
-   *(Or just run `android run` if using Antigravity).*
-
-#### 3. Launch & Permissions
-Upon launching iTantra on your phone, you will see the new `iT` app icon. The app will immediately and **automatically prompt you via native Android dialogs** to grant the following permissions:
-- **Nearby Devices / Bluetooth:** To find other phones.
-- **Location:** Required by Android for Wi-Fi Direct scanning.
-- **Microphone:** To record your voice.
-- **Notifications:** To keep the P2P radio alive in the background.
-
----
-
-## How to Use iTantra (Quick Start)
-
-### 1. Connecting Peers
-- Open iTantra on both physical phones with Bluetooth & Wi-Fi turned on.
-- On Phone A, tap **Host**.
-- On Phone B, tap **Scan**.
-- They will automatically connect and drop you into the Talk screen.
-
-### 2. Startup & AI Model Loading
-- The embedded AI models (Whisper and Piper) are quite large (~165MB) and are bundled inside the APK.
-- **IMPORTANT UX NOTE:** On app launch, you will see a static **Splash Screen** with a progress bar. This safely loads the AI models into memory while the UI is dormant, avoiding C++ threading conflicts.
-- Once loaded, the models run in a completely isolated background process (`:ai_engine`). This means even if the AI engine crashes, the main walkie-talkie UI and SOS features remain perfectly alive!
-
-### 3. Push-to-Talk (PTT) Messaging
-- **Press and Hold** the large circular Mic button. Speak your message.
-- Release the button. It transcribes instantly offline and sends it to your peer.
-- The peer receives it and reads it out loud automatically using the offline TTS voice!
-
-### 4. Triggering Emergency SOS Siren
-- Tap the **SOS** button on the bottom bar.
-- Tap **Confirm Emergency Siren**. This will override silent mode and blast a siren on all connected phones.
