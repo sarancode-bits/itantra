@@ -12,6 +12,9 @@ import com.itantra.IAiEngineCallback
 import com.itantra.service.AiEngineService
 import dagger.hilt.android.qualifiers.ApplicationContext
 import kotlinx.coroutines.CompletableDeferred
+import kotlinx.coroutines.CoroutineScope
+import kotlinx.coroutines.Dispatchers
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -49,7 +52,7 @@ class RemoteSpeechToText @Inject constructor(
     override val isReady: StateFlow<Boolean> = _isReady.asStateFlow()
 
     private var engine: IAiEngine? = null
-    private val bindDeferred = CompletableDeferred<IAiEngine>()
+    private var bindDeferred = CompletableDeferred<IAiEngine>()
 
     private val callback = object : IAiEngineCallback.Stub() {
         override fun onSttStateChanged(stateCode: Int, text: String?) {
@@ -86,7 +89,12 @@ class RemoteSpeechToText @Inject constructor(
             } catch (e: Exception) {
                 Log.e(TAG, "Failed to register callback", e)
             }
-            bindDeferred.complete(aiEngine)
+            if (!bindDeferred.isCompleted) {
+                bindDeferred.complete(aiEngine)
+            } else {
+                bindDeferred = CompletableDeferred()
+                bindDeferred.complete(aiEngine)
+            }
             Log.i(TAG, "Bound to AiEngineService")
         }
 
@@ -94,7 +102,7 @@ class RemoteSpeechToText @Inject constructor(
             Log.w(TAG, "AiEngineService disconnected (process crashed?)")
             engine = null
             _isReady.value = false
-            // The OS will auto-restart the service due to START_STICKY
+            bindDeferred = CompletableDeferred() // Reset so it waits for next bind
         }
     }
 
@@ -131,7 +139,6 @@ class RemoteSpeechToText @Inject constructor(
         try {
             aiEngine.initialize()
             // The callback will set _isReady when initialization completes
-            // Wait a reasonable amount for the callback
             withTimeoutOrNull(30_000L) {
                 while (!_isReady.value) {
                     kotlinx.coroutines.delay(100)
@@ -143,6 +150,14 @@ class RemoteSpeechToText @Inject constructor(
     }
 
     override fun startListening() {
+        if (engine == null) {
+            Log.e(TAG, "Engine is null (crashed?). Attempting to re-bind and initialize.")
+            _state.value = SttState.Error("AI engine rebooting... Please wait a few seconds and try again.")
+            kotlinx.coroutines.CoroutineScope(kotlinx.coroutines.Dispatchers.IO).launch {
+                initialize()
+            }
+            return
+        }
         try {
             engine?.startListening()
         } catch (e: Exception) {

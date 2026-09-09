@@ -9,7 +9,10 @@ import androidx.compose.animation.core.tween
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.gestures.awaitEachGesture
+import androidx.compose.foundation.gestures.awaitFirstDown
 import androidx.compose.foundation.gestures.detectTapGestures
+import androidx.compose.foundation.gestures.waitForUpOrCancellation
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -443,10 +446,15 @@ fun PushToTalkArea(
                 text = when (sttState) {
                     is SttState.Listening -> "RECORDING SPEECH... RELEASE TO SEND"
                     is SttState.Processing -> "TRANSCRIBING SPEECH ON-DEVICE..."
+                    is SttState.Error -> "ERROR: ${(sttState as SttState.Error).message}"
                     else -> "HOLD MIC TO TALK"
                 },
                 style = MaterialTheme.typography.labelLarge,
-                color = if (isRecording) SafetyOrange else TextSecondary,
+                color = when {
+                    isRecording -> SafetyOrange
+                    sttState is SttState.Error -> AlertRed
+                    else -> TextSecondary
+                },
                 fontWeight = FontWeight.Bold,
                 letterSpacing = 1.sp
             )
@@ -462,13 +470,12 @@ fun PushToTalkArea(
                     .background(if (isRecording) AlertRed else SafetyOrange)
                     .pointerInput(isHandsFreeMode) {
                         if (!isHandsFreeMode) {
-                            detectTapGestures(
-                                onPress = {
-                                    onPressStart()
-                                    tryAwaitRelease()
-                                    onPressEnd()
-                                }
-                            )
+                            awaitEachGesture {
+                                awaitFirstDown().consume()
+                                onPressStart()
+                                waitForUpOrCancellation()?.consume()
+                                onPressEnd()
+                            }
                         }
                     },
                 contentAlignment = Alignment.Center
