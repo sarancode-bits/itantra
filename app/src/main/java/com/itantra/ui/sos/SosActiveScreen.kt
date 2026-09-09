@@ -74,7 +74,7 @@ fun SosActiveScreen(
                 Icon(
                     imageVector = Icons.Default.Warning,
                     contentDescription = "SOS Active",
-                    tint = TextPrimary,
+                    tint = Color.White,
                     modifier = Modifier.size(80.dp)
                 )
             }
@@ -84,7 +84,7 @@ fun SosActiveScreen(
             Text(
                 text = "EMERGENCY SOS ACTIVE",
                 style = MaterialTheme.typography.displayMedium,
-                color = TextPrimary,
+                color = Color.White,
                 fontWeight = FontWeight.Black
             )
 
@@ -97,7 +97,7 @@ fun SosActiveScreen(
                     "BROADCASTING SIREN TO ALL CONNECTED PEERS"
                 },
                 style = MaterialTheme.typography.titleLarge,
-                color = TextPrimary,
+                color = Color.White,
                 fontWeight = FontWeight.Bold
             )
 
@@ -106,7 +106,7 @@ fun SosActiveScreen(
             Text(
                 text = "STREAM_ALARM audio tone + vibration pattern active.",
                 style = MaterialTheme.typography.bodyMedium,
-                color = TextPrimary.copy(alpha = 0.8f)
+                color = Color.White.copy(alpha = 0.8f)
             )
 
             Spacer(modifier = Modifier.height(48.dp))
@@ -117,7 +117,7 @@ fun SosActiveScreen(
                     .fillMaxWidth()
                     .height(60.dp),
                 shape = RoundedCornerShape(16.dp),
-                colors = ButtonDefaults.buttonColors(containerColor = TextPrimary)
+                colors = ButtonDefaults.buttonColors(containerColor = Color.White)
             ) {
                 Text(
                     text = "DISMISS / CANCEL SOS",

@@ -178,7 +178,7 @@ fun HomeScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (connectionState is ConnectionState.Advertising) ConnectedGreen else SafetyOrange,
-                        contentColor = TextPrimary
+                        contentColor = Color.White
                     )
                 ) {
                     Column(
@@ -199,7 +199,7 @@ fun HomeScreen(
                         Text(
                             text = "Become Discoverable",
                             style = MaterialTheme.typography.labelSmall,
-                            color = TextPrimary.copy(alpha = 0.8f)
+                            color = Color.White.copy(alpha = 0.8f)
                         )
                     }
                 }
@@ -213,7 +213,7 @@ fun HomeScreen(
                     shape = RoundedCornerShape(16.dp),
                     colors = ButtonDefaults.buttonColors(
                         containerColor = if (connectionState is ConnectionState.Discovering) WarningYellow else SurfaceCard,
-                        contentColor = if (connectionState is ConnectionState.Discovering) DarkBackground else TextPrimary
+                        contentColor = if (connectionState is ConnectionState.Discovering) TextPrimary else TextPrimary
                     ),
                     border = if (connectionState !is ConnectionState.Discovering) androidx.compose.foundation.BorderStroke(1.dp, OutlineBorder) else null
                 ) {
@@ -235,7 +235,7 @@ fun HomeScreen(
                         Text(
                             text = "Find Nearby Devices",
                             style = MaterialTheme.typography.labelSmall,
-                            color = if (connectionState is ConnectionState.Discovering) DarkBackground.copy(alpha = 0.8f) else TextSecondary
+                            color = if (connectionState is ConnectionState.Discovering) TextPrimary.copy(alpha = 0.7f) else TextSecondary
                         )
                     }
                 }

@@ -2,21 +2,21 @@ package com.itantra.ui.theme
 
 import androidx.compose.ui.graphics.Color
 
-// Emergency dark theme color palette
-val DarkBackground = Color(0xFF0A0A0A)
-val SurfaceDark = Color(0xFF141414)
-val SurfaceCard = Color(0xFF1E1E1E)
-val SurfaceVariant = Color(0xFF282828)
+// Light theme — clean white/orange emergency palette
+val DarkBackground = Color(0xFFF8F8FA)       // Main background — warm off-white
+val SurfaceDark = Color(0xFFFFFFFF)            // Pure white surface
+val SurfaceCard = Color(0xFFFFFFFF)            // Card background — white
+val SurfaceVariant = Color(0xFFF0F1F5)         // Subtle gray for secondary areas
 
 // Accent Colors
-val SafetyOrange = Color(0xFFFF5A1F)
-val AlertRed = Color(0xFFFF2E2E)
-val AlertRedDark = Color(0xFF8B0000)
-val ConnectedGreen = Color(0xFF00E676)
-val WarningYellow = Color(0xFFFFD600)
+val SafetyOrange = Color(0xFFFF5A1F)           // Primary accent (unchanged)
+val AlertRed = Color(0xFFE53935)               // Slightly refined red
+val AlertRedDark = Color(0xFF8B0000)           // Deep red for SOS active (unchanged)
+val ConnectedGreen = Color(0xFF2E7D32)         // Darker green for readability on white
+val WarningYellow = Color(0xFFF9A825)          // Deeper amber for readability on white
 
 // Text and Content Colors
-val TextPrimary = Color(0xFFF5F5F5)
-val TextSecondary = Color(0xFFA0A0A0)
-val TextDisabled = Color(0xFF606060)
-val OutlineBorder = Color(0xFF333333)
+val TextPrimary = Color(0xFF1A1A2E)            // Near-black text on white
+val TextSecondary = Color(0xFF6B7280)          // Medium gray secondary text
+val TextDisabled = Color(0xFFB0B0B0)           // Light gray disabled text
+val OutlineBorder = Color(0xFFE0E0E0)          // Light border for cards

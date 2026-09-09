@@ -170,8 +170,8 @@ fun TalkScreen(
                     Column {
                         Text("SIH EVALUATION METRICS", style = MaterialTheme.typography.labelSmall, color = ConnectedGreen, fontWeight = FontWeight.Bold)
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-                            Text("STT Latency: ${m.sttLatencyMs}ms", color = TextPrimary, style = MaterialTheme.typography.bodySmall)
-                            Text("Audio Dur: ${m.audioDurationMs}ms", color = TextPrimary, style = MaterialTheme.typography.bodySmall)
+                            Text("STT Latency: ${m.sttLatencyMs}ms", color = Color.White, style = MaterialTheme.typography.bodySmall)
+                            Text("Audio Dur: ${m.audioDurationMs}ms", color = Color.White, style = MaterialTheme.typography.bodySmall)
                             Text("RTF: ${String.format("%.2f", m.rtf)}", color = SafetyOrange, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold)
                         }
                         Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -301,11 +301,11 @@ fun ConnectionStatusBar(
                     Icon(
                         imageVector = Icons.Default.Warning,
                         contentDescription = "SOS",
-                        tint = TextPrimary,
+                        tint = Color.White,
                         modifier = Modifier.size(18.dp)
                     )
                     Spacer(modifier = Modifier.width(4.dp))
-                    Text("SOS", fontWeight = FontWeight.Black, color = TextPrimary)
+                    Text("SOS", fontWeight = FontWeight.Black, color = Color.White)
                 }
 
                 Spacer(modifier = Modifier.width(8.dp))
@@ -476,7 +476,7 @@ fun PushToTalkArea(
                 Icon(
                     imageVector = Icons.Default.Mic,
                     contentDescription = "Hold to talk",
-                    tint = TextPrimary,
+                    tint = Color.White,
                     modifier = Modifier.size(48.dp)
                 )
             }
